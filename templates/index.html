@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Article Repository</title>
+    <style>
+        /* Add your CSS styles here */
+        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        
+        .btn {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .result.success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Health Article Repository</h1>
+        <form id="classify-form" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title">
+            </div>
+            <div class="form-group">
+                <label>Select input type:</label><br>
+                <input type="radio" id="url" name="input_type" value="url" checked>
+                <label for="url">URL</label>
+                <input type="radio" id="pdf" name="input_type" value="pdf">
+                <label for="pdf">PDF</label>
+            </div>
+            <div id="url_input">
+                <div class="form-group">
+                    <label for="url_link">Enter the URL:</label>
+                    <input type="text" id="url_link" name="url_link">
+                </div>
+            </div>
+            <div id="pdf_input" style="display: none;">
+                <div class="form-group">
+                    <label for="pdf_file">Upload PDF file:</label>
+                    <input type="file" id="pdf_file" name="pdf_file" accept=".pdf">
+                </div>
+            </div>
+            <button type="submit" class="btn">Classify</button>
+        </form>
+        <div id="result" class="result"></div>
+    </div>
+    <script>
+        // Add your JavaScript code here
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('classify-form');
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const formData = new FormData(form);
+                fetch('/classify', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.innerHTML = data.prediction_message;
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            const urlRadio = document.getElementById('url');
+            const pdfRadio = document.getElementById('pdf');
+            const urlInput = document.getElementById('url_input');
+            const pdfInput = document.getElementById('pdf_input');
+
+            urlRadio.addEventListener('change', function () {
+                if (urlRadio.checked) {
+                    urlInput.style.display = 'block';
+                    pdfInput.style.display = 'none';
+                }
+            });
+
+            pdfRadio.addEventListener('change', function () {
+                if (pdfRadio.checked) {
+                    pdfInput.style.display = 'block';
+                    urlInput.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
