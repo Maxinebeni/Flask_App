@@ -123,7 +123,12 @@
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     const resultDiv = document.getElementById('result');
                     resultDiv.innerHTML = data.prediction_message;
@@ -135,7 +140,11 @@
                         resultDiv.appendChild(summaryDiv);
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.innerHTML = `Error: ${error.message}`;
+                });
             });
 
             const urlRadio = document.getElementById('url');
