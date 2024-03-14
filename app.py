@@ -1,3 +1,4 @@
+import re
 from flask import Flask, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
@@ -5,7 +6,6 @@ from urllib.parse import urlparse
 import pdfplumber
 import validators
 import joblib
-import re
 
 app = Flask(__name__)
 
