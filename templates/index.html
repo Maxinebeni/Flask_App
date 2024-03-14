@@ -6,7 +6,6 @@
     <title>Health Article Repository</title>
     <style>
         /* Add your CSS styles here */
-        /* Add your CSS styles here */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -128,6 +127,13 @@
                 .then(data => {
                     const resultDiv = document.getElementById('result');
                     resultDiv.innerHTML = data.prediction_message;
+
+                    if (data.summary) {
+                        const summaryDiv = document.createElement('div');
+                        summaryDiv.classList.add('result');
+                        summaryDiv.innerHTML = `<h2>Summary:</h2><p>${data.summary}</p>`;
+                        resultDiv.appendChild(summaryDiv);
+                    }
                 })
                 .catch(error => console.error('Error:', error));
             });
