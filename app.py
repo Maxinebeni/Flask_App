@@ -7,7 +7,11 @@ import pdfplumber
 import validators
 import joblib
 
+from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
+
 app = Flask(__name__)
+CORS(app)
 
 # Load your trained model
 model = joblib.load('text_classification_model.pkl')
