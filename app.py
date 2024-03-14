@@ -10,7 +10,7 @@ import joblib
 app = Flask(__name__)
 
 # Load your trained model
-model = joblib.load('htext_classification_model.pkl')
+model = joblib.load('text_classification_model.pkl')
 
 # Function to extract text from a PDF file
 def get_text_from_pdf(uploaded_file):
