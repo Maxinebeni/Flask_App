@@ -1,4 +1,8 @@
-import re
+import pandas as pd
+from nltk.tokenize import sent_tokenize
+from nltk.cluster.util import cosine_distance
+import nltk
+nltk.download('punkt')
 from flask import Flask, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
@@ -6,15 +10,54 @@ from urllib.parse import urlparse
 import pdfplumber
 import validators
 import joblib
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
+
+
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})  # Allow requests from localhost:3000
 
 # Load your trained model
 model = joblib.load('text_classification_model.pkl')
+
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+def summarize_text(text):
+    # Tokenize sentences
+    sentences = sent_tokenize(text)
+
+    # Calculate sentence embeddings using TF-IDF or other methods
+    # Here, we'll use a simple bag-of-words approach
+    from sklearn.feature_extraction.text import CountVectorizer
+    vectorizer = CountVectorizer()
+    X = vectorizer.fit_transform(sentences)
+    
+    # Convert the count matrix to TF-IDF representation
+    from sklearn.feature_extraction.text import TfidfTransformer
+    transformer = TfidfTransformer()
+    X_tfidf = transformer.fit_transform(X)
+    
+    # Calculate pairwise cosine similarity
+    similarity_matrix = cosine_similarity(X_tfidf, X_tfidf)
+    
+    # Apply TextRank algorithm
+    sentence_scores = similarity_matrix.sum(axis=1)
+    sentence_scores_normalized = (sentence_scores - min(sentence_scores)) / (max(sentence_scores) - min(sentence_scores))
+    sentence_scores_normalized += 0.1  # Add a small number to avoid zero-division
+    max_sentence_scores = max(sentence_scores_normalized)
+    sentence_scores_normalized = sentence_scores_normalized / max_sentence_scores
+
+    scored_sentences = sorted(enumerate(sentence_scores_normalized), key=lambda x: (x[1], x[0]), reverse=True)
+
+    summary = ''
+    for i, score in scored_sentences[:3]:
+        summary += ' ' + (sentences[i])
+
+    return summary
+
+
 
 # Function to extract text from a PDF file
 def get_text_from_pdf(uploaded_file):
@@ -33,13 +76,9 @@ def get_text_from_url(url):
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        if "example1.com" in url:
-            paragraphs = soup.find_all('p')
-        elif "example2.com" in url:
-            paragraphs = soup.find_all('div')
-        else:
-            paragraphs = soup.find_all('p')
-        
+        main = soup.find('main')
+        paragraphs = main.find_all('p')
+
         text = ' '.join([paragraph.get_text() for paragraph in paragraphs])
 
         if not text.strip():
@@ -48,7 +87,6 @@ def get_text_from_url(url):
         return text
     except Exception as e:
         return str(e)
-
 # Function to classify text using the trained model
 def classify_text(text):
     # Your code for model prediction goes here
@@ -58,10 +96,7 @@ def classify_text(text):
 
 # Function to generate summary from text
 def generate_summary(text):
-    # Split text into sentences
-    sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', text)
-    # Take the first few sentences as the summary
-    summary = ' '.join(sentences[:3])  # Change 3 to the desired number of sentences
+    summary = summarize_text(text)
     return summary
 
 @app.route('/')
@@ -85,7 +120,7 @@ def classify():
     # Prepare the message based on the prediction
     if prediction == 1:
         message = "The article is health-related."
-        summary = generate_summary(text)
+        summary = summarize_text(text)
     else:
         message = "The article is not health-related."
         summary = ""
