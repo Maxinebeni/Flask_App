@@ -1,28 +1,22 @@
+import joblib
 import pandas as pd
 from nltk.tokenize import sent_tokenize
 from nltk.cluster.util import cosine_distance
 import nltk
-nltk.download('punkt')
 from flask import Flask, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
 import pdfplumber
-import validators
-import joblib
-import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from flask_cors import CORS
 
-
-
+nltk.download('punkt')
 
 app = Flask(__name__)
+CORS(app)  # Allow requests from all origins
 
 # Load your trained model
 model = joblib.load('text_classification_model.pkl')
-
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
 
 def summarize_text(text):
     # Tokenize sentences
@@ -57,8 +51,6 @@ def summarize_text(text):
 
     return summary
 
-
-
 # Function to extract text from a PDF file
 def get_text_from_pdf(uploaded_file):
     try:
@@ -87,6 +79,7 @@ def get_text_from_url(url):
         return text
     except Exception as e:
         return str(e)
+
 # Function to classify text using the trained model
 def classify_text(text):
     # Your code for model prediction goes here
