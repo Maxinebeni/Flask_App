@@ -9,6 +9,8 @@ from bs4 import BeautifulSoup
 import pdfplumber
 from sklearn.metrics.pairwise import cosine_similarity
 from flask_cors import CORS
+import io
+
 
 nltk.download('punkt')
 
@@ -53,6 +55,9 @@ def summarize_text(text):
 
 # Function to extract text from a PDF file
 def get_text_from_pdf(uploaded_file):
+    if uploaded_file.content_type not in ['application/pdf']:
+        return "Invalid file type. Please upload a PDF file."
+
     try:
         pdf_reader = pdfplumber.open(uploaded_file)
         text = ""
@@ -100,16 +105,22 @@ def home():
 def classify():
     title = request.form['title']
     input_type = request.form['input_type']
-    
+
     if input_type == 'url':
         url_link = request.form['url_link']
         text = get_text_from_url(url_link)
+        if not text or isinstance(text, str) and text.startswith("<!doctype"):
+            return jsonify({
+                'error': 'Unable to extract text from the provided URL. Please ensure the URL is valid and contains readable content.'
+            }), 500
     elif input_type == 'pdf':
         pdf_file = request.files['pdf_file']
         text = get_text_from_pdf(pdf_file)
 
+        if isinstance(text, str) and text.startswith("Invalid"):
+            return jsonify({'error': text}), 500
+
     prediction, text = classify_text(text)
-    
     # Prepare the message based on the prediction
     if prediction == 1:
         message = "The article is health-related."
