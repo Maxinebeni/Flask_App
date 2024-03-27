@@ -8,8 +8,12 @@ import joblib
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lex_rank import LexRankSummarizer
+from flask_cors import CORS # Import CORS from flask_cors module
+
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes of the app
+
 
 # Load your trained model
 model = joblib.load('htext_classification_model.pkl')
