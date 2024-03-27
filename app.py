@@ -66,17 +66,23 @@ def home():
 
 @app.route('/classify', methods=['POST'])
 def classify():
-    input_type = request.form['input_type']
+    data = request.get_json()
+    if not data:
+        data = {}
 
-    if input_type == 'url':
-        url_link = request.form['url_link']
+    option = data.get('input_type')
+
+    if option == 'url':
+        url_link = data.get('url_link')
         text = get_text_from_url(url_link)
 
         if not text or isinstance(text, str) and text.startswith("<!doctype"):
             return jsonify({
                 'error': 'Unable to extract text from the provided URL. Please ensure the URL is valid and contains readable content.'
             }), 500
-    elif input_type == 'pdf':
+            
+            
+    elif option == 'pdf':
         pdf_file = request.files['pdf_file']
         text = get_text_from_pdf(pdf_file)
 
@@ -97,7 +103,7 @@ def classify():
     return jsonify({
         'prediction_message': message,
         'summary': summary
-    })
+    }), 201
 
 if __name__ == '__main__':
     app.run(debug=True)
