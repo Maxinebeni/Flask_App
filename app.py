@@ -66,10 +66,8 @@ def home():
 
 @app.route('/classify', methods=['POST'])
 def classify():
-    data = request.get_json()
-    if not data:
-        data = {}
-
+    data = request.form  # Use request.form instead of request.get_json() to handle form data
+    
     option = data.get('input_type')
 
     if option == 'url':
@@ -80,7 +78,6 @@ def classify():
             return jsonify({
                 'error': 'Unable to extract text from the provided URL. Please ensure the URL is valid and contains readable content.'
             }), 500
-            
             
     elif option == 'pdf':
         pdf_file = request.files['pdf_file']
@@ -103,7 +100,7 @@ def classify():
     return jsonify({
         'prediction_message': message,
         'summary': summary
-    }), 201
+    }), 200  # Change the status code to 200
 
 if __name__ == '__main__':
     app.run(debug=True)
