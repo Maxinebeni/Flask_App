@@ -1,54 +1,21 @@
-import joblib
-import io
-import pandas as pd
-from nltk.tokenize import sent_tokenize
-from nltk.cluster.util import cosine_distance
-import nltk
+import os
+from flask import Flask, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 import pdfplumber
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-
-nltk.download('punkt')
+import joblib
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.summarizers.lex_rank import LexRankSummarizer
 
 app = Flask(__name__)
-CORS(app)
 
-model = joblib.load('text_classification_model.pkl')
+# Load your trained model
+model = joblib.load('htext_classification_model.pkl')
 
-def summarize_text(text):
-    sentences = sent_tokenize(text)
-
-    vectorizer = CountVectorizer()
-    X = vectorizer.fit_transform(sentences)
-
-    transformer = TfidfTransformer()
-    X_tfidf = transformer.fit_transform(X)
-
-    similarity_matrix = cosine_similarity(X_tfidf, X_tfidf)
-
-    sentence_scores = similarity_matrix.sum(axis=1)
-    sentence_scores_normalized = (sentence_scores - min(sentence_scores)) / (max(sentence_scores) - min(sentence_scores))
-    sentence_scores_normalized += 0.1
-    max_sentence_scores = max(sentence_scores_normalized)
-    sentence_scores_normalized = sentence_scores_normalized / max_sentence_scores
-
-    scored_sentences = sorted(enumerate(sentence_scores_normalized), key=lambda x: (x[1], x[0]), reverse=True)
-
-    summary = ""
-    for i, score in scored_sentences[:3]:
-        summary += ' ' + sentences[i]
-
-    return summary
-
+# Function to extract text from a PDF file
 def get_text_from_pdf(uploaded_file):
-    if uploaded_file.content_type not in ['application/pdf']:
-        return "Invalid file type. Please upload a PDF file."
-
     try:
         pdf_reader = pdfplumber.open(uploaded_file)
         text = ""
@@ -58,36 +25,36 @@ def get_text_from_pdf(uploaded_file):
     except Exception as e:
         return str(e)
 
+# Function to extract text from a URL using Beautiful Soup
 def get_text_from_url(url):
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
-
-        main = soup.find('main')
-        paragraphs = main.find_all('p')
-
+        
+        paragraphs = soup.find_all('p') # Adjust this based on the HTML structure
+        
         text = ' '.join([paragraph.get_text() for paragraph in paragraphs])
-
+        
+        # Check if text is empty after extraction
         if not text.strip():
             raise ValueError("Unable to determine content from the website.")
-
+        
         return text
     except Exception as e:
         return str(e)
 
+# Function to classify text using the trained model
 def classify_text(text):
-    prediction = model.predict([text])[0]
-    return prediction, text
+    # Your code for model prediction goes here
+    # Assume `model.predict(text)` returns 1 for health-related and 0 for non-health-related
+    return model.predict([text])
 
-def extract_pdf_text(pdf_file):
-    try:
-        pdf_reader = pdfplumber.open(pdf_file)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text()
-        return text
-    except Exception:
-        return None
+# Function to generate summary using LexRank
+def generate_summary(text):
+    parser = PlaintextParser.from_string(text, Tokenizer("english"))
+    summarizer = LexRankSummarizer()
+    summary = summarizer(parser.document, sentences_count=6)  # Adjust the number of sentences for summary
+    return ' '.join([str(sentence) for sentence in summary])
 
 @app.route('/')
 def home():
@@ -95,7 +62,6 @@ def home():
 
 @app.route('/classify', methods=['POST'])
 def classify():
-    title = request.form['title']
     input_type = request.form['input_type']
 
     if input_type == 'url':
@@ -108,21 +74,21 @@ def classify():
             }), 500
     elif input_type == 'pdf':
         pdf_file = request.files['pdf_file']
-        text = extract_pdf_text(pdf_file)
+        text = get_text_from_pdf(pdf_file)
 
-        if text is None:
+        if not text:
             return jsonify({
                 'error': 'Failed to process the PDF file. Please make sure it is a valid PDF.'
             }), 500
 
-    prediction, text = classify_text(text)
+    prediction = classify_text(text)
 
     if prediction == 1:
         message = "The article is health-related."
-        summary = summarize_text(text)
+        summary = generate_summary(text)
     else:
         message = "The article is not health-related."
-        summary = ""
+        summary = None
 
     return jsonify({
         'prediction_message': message,

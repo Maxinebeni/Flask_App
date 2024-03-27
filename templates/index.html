@@ -112,60 +112,56 @@
     </div>
     <script>
         // Add your JavaScript code here
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('classify-form');
-
-            form.addEventListener('submit', function (event) {
-                event.preventDefault();
-
-                const formData = new FormData(form);
-                fetch('/classify', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const resultDiv = document.getElementById('result');
-                    resultDiv.innerHTML = data.prediction_message;
-
-                    if (data.summary) {
-                        const summaryDiv = document.createElement('div');
-                        summaryDiv.classList.add('result');
-                        summaryDiv.innerHTML = `<h2>Summary:</h2><p>${data.summary}</p>`;
-                        resultDiv.appendChild(summaryDiv);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    const resultDiv = document.getElementById('result');
-                    resultDiv.innerHTML = `Error: ${error.message}`;
-                });
-            });
-
-            const urlRadio = document.getElementById('url');
-            const pdfRadio = document.getElementById('pdf');
-            const urlInput = document.getElementById('url_input');
-            const pdfInput = document.getElementById('pdf_input');
-
-            urlRadio.addEventListener('change', function () {
-                if (urlRadio.checked) {
-                    urlInput.style.display = 'block';
-                    pdfInput.style.display = 'none';
+        document.getElementById('classify-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const url = form.url_link.value;
+            
+            fetch('/classify', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
-            });
-
-            pdfRadio.addEventListener('change', function () {
-                if (pdfRadio.checked) {
-                    pdfInput.style.display = 'block';
-                    urlInput.style.display = 'none';
+                return response.json();
+            })
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `<p>${data.prediction_message}</p>`;
+                
+                if (data.summary) {
+                    resultDiv.innerHTML += `<p><strong>Summary:</strong> ${data.summary}</p>`;
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `Error: ${error.message}`;
             });
+        });        
+        
+        const urlRadio = document.getElementById('url');
+        const pdfRadio = document.getElementById('pdf');
+        const urlInput = document.getElementById('url_input');
+        const pdfInput = document.getElementById('pdf_input');
+        
+        urlRadio.addEventListener('change', function () {
+            if (urlRadio.checked) {
+                urlInput.style.display = 'block';
+                pdfInput.style.display = 'none';
+            }
+        });
+        
+        pdfRadio.addEventListener('change', function () {
+            if (pdfRadio.checked) {
+                pdfInput.style.display = 'block';
+                urlInput.style.display = 'none';
+            }
         });
     </script>
-</body>
+    </body>
 </html>
