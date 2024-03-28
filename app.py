@@ -69,6 +69,8 @@ def classify():
     data = request.form  # Use request.form instead of request.get_json() to handle form data
     
     option = data.get('input_type')
+    text = ""  # Initialize text variable with an empty string
+
 
     if option == 'url':
         url_link = data.get('url_link')
